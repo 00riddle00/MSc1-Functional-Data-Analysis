@@ -49,11 +49,18 @@ For individual steps, run `$ make help`.
 - **Windows:** https://git-scm.com/download/win — after install, run: `$ git config
   --global core.longpaths true`
 
-### R (4.5+)
+### R (4.5.3)
+
+This project was developed and tested with R 4.5.3. Use this version
+to reproduce the original analyses. Upgrading to R 4.6.x previously
+caused compatibility problems.
 
 - **Linux:** https://cran.r-project.org/bin/linux/ (follow distro-specific instructions)
 - **macOS:** https://cran.r-project.org/bin/macosx/
 - **Windows:** https://cran.r-project.org/bin/windows/base/
+
+R package versions are recorded in `renv.lock`. Note that `renv`
+manages R packages, not the R interpreter itself.
 
 ### Python (3.14+)
 
@@ -84,13 +91,16 @@ Needed to compile the presentations and final report locally.
 
 ### System libraries (Linux only)
 
-Some R packages require system libraries. Install before running `> renv::restore()` in
-R console:
+Some R packages require system libraries and a Fortran compiler to build from source.
+Install before running `> renv::restore()` in R console:
 
 ```bash
-$ sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev libfontconfig1-dev \
-  libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+$ sudo apt install gfortran libcurl4-openssl-dev libssl-dev libxml2-dev \
+    libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev \
+    libpng-dev libtiff-dev libjpeg-dev
 ```
+
+The Fortran compiler is required by packages such as `nlme`, `deSolve`, and `mclust`.
 
 ### Jupyter R kernel
 
@@ -134,11 +144,22 @@ $ git clone https://github.com/OpenNeuroDatasets/ds006018
 
 **R:**
 
-Run in R console:
+Use R 4.5.3 and install the required system dependencies (see [System
+libraries](#system-libraries-linux-only)) before restoring.
+
+Run in the R console:
 
 ```r
 > install.packages("renv")
 > renv::restore()
+```
+The lockfile `renv.lock` restores the original R package versions into the
+project-specific library.
+
+Verify the environment:
+
+```bash
+Rscript -e 'renv::status()'
 ```
 
 **Python:**
