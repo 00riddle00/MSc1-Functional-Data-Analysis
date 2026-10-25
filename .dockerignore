@@ -1,0 +1,15 @@
+# Git metadata
+.git/
+
+# Python virtual environment
+.venv/
+
+# Large EEG datasets and generated outputs
+ds006018/
+ds006018_per_stimuli/
+ds006018_functional/
+
+# Exclude the local R library, but retain renv configuration
+renv/*
+!renv/activate.R
+!renv/settings.json

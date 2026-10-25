@@ -19,6 +19,7 @@ in Socioeconomic Context in Adulthood* (Isbell et al., 2025,
 - [Quick start](#quick-start)
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
+- [Reproducible R 4.5.3 environment](#reproducible-r-453-environment)
 - [Pipeline](#pipeline)
 - [Folder structure](#folder-structure)
 - [R / Python Pipeline](#r--python-pipeline)
@@ -36,6 +37,10 @@ $ make all
 ```
 
 For individual steps, run `$ make help`.
+
+To keep a newer R version on the host while reproducing the original R 4.5.3
+environment, see [Reproducible R 4.5.3 environment](#reproducible-r-453-environment)
+and the detailed [`docs/r-environment.md`](docs/r-environment.md) guide.
 
 ---
 
@@ -61,6 +66,10 @@ caused compatibility problems.
 
 R package versions are recorded in `renv.lock`. Note that `renv`
 manages R packages, not the R interpreter itself.
+
+The host system does not need to stay on R 4.5.3 when the Podman environment is
+used. The container preserves R 4.5.3 separately, allowing the host R installation
+to be upgraded for newer projects.
 
 ### Python (3.14+)
 
@@ -101,6 +110,8 @@ $ sudo apt install gfortran libcurl4-openssl-dev libssl-dev libxml2-dev \
 ```
 
 The Fortran compiler is required by packages such as `nlme`, `deSolve`, and `mclust`.
+These host-side R system dependencies are not required when using the Podman image,
+because the image contains its own compiler and development libraries.
 
 ### Jupyter R kernel
 
@@ -187,6 +198,51 @@ After changing dependencies with pip and updating `requirements.txt`, run:
 ```bash
 $ make import-requirements
 ```
+
+---
+
+## Reproducible R 4.5.3 environment
+
+For long-term reproducibility, the original R environment can be built as a local
+Podman image. This keeps the project on R 4.5.3 even when the host system uses a newer
+R release.
+
+Build the image from the repository root:
+
+```bash
+$ podman build --runtime=crun -t fda-r:4.5.3 .
+```
+
+Verify the project environment against the real repository:
+
+```bash
+$ podman run --rm \
+    --runtime=crun \
+    -v "${PWD}:/opt/fda" \
+    -w /opt/fda \
+    localhost/fda-r:4.5.3 \
+    Rscript -e 'renv::status()'
+```
+
+Run an R script with the preserved environment:
+
+```bash
+$ podman run --rm \
+    --runtime=crun \
+    -v "${PWD}:/opt/fda" \
+    -w /opt/fda \
+    localhost/fda-r:4.5.3 \
+    Rscript EDA/Smoothing_and_EDA.R
+```
+
+The repository is bind-mounted into `/opt/fda`, so editing, Git operations and file
+browsing normally remain on the host, while R commands execute inside the container.
+Outputs written under `/opt/fda` remain in the normal host working tree.
+
+For build details, interactive-shell usage, image lifecycle, `renv` restore
+workarounds, generated-file caveats, and the reason the project intentionally uses
+`rocker/r-ver` instead of an RStudio Server image, see
+[`docs/r-environment.md`](docs/r-environment.md).
 
 ---
 
@@ -430,10 +486,14 @@ pipeline outputs by `make report`.
 │   └── 07_participants_eda_R.ipynb            # participants EDA (R)
 ├── Presentations/                             # Beamer slides (1st, 2nd, 3rd; compiled PDFs)
 ├── Practice/                                  # University lab materials and experiments
+├── docs/
+│   └── r-environment.md                       # R 4.5.3 Podman environment guide
+├── Dockerfile                                 # Reproducible R 4.5.3 image
 ├── Makefile                                   # run `make help` for targets
 ├── Functional-Data-Analysis.Rproj             # RStudio project config
 ├── renv.lock                                  # R dependency versions
 ├── requirements.txt                           # Python dependencies
+├── .dockerignore                              # Excludes local/large files from image builds
 ├── .gitignore
 ├── .gitmodules                                # ds006018 submodule reference
 ├── .renvignore                                # files/folders renv should ignore
